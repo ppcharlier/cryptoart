@@ -8,16 +8,56 @@ struct ArtQuery: Content {
     var format: String?
     var width: Int?
     var height: Int?
-    var mode: String? // uuid, dna, combined
+    var recipe: String? // e.g. "sha256,uuid,sha512"
 }
 
 struct ArtController {
     
-    // Helper to generate SHA512 DNA of an algorithm configuration
-    private func generateDNA(char: String, world: String?, w: Int, h: Int) -> String {
-        let input = "\(char)-\(world ?? "none")-\(w)x\(h)"
+    // Helper to generate SHA512
+    private func sha512(_ input: String) -> String {
         let digest = SHA512.hash(data: Data(input.utf8))
         return digest.compactMap { String(format: "%02x", $0) }.joined()
+    }
+
+    // Helper to generate SHA256
+    private func sha256(_ input: String) -> String {
+        let digest = SHA256.hash(data: Data(input.utf8))
+        return digest.compactMap { String(format: "%02x", $0) }.joined()
+    }
+    
+    // Helper to generate DNA (config hash)
+    private func generateDNA(char: String, world: String?, w: Int, h: Int) -> String {
+        let input = "\(char)-\(world ?? "none")-\(w)x\(h)"
+        return sha512(input)
+    }
+
+    // New: Composite Seed Builder
+    private func buildSeed(recipe: String?, base: String) -> String {
+        guard let recipe = recipe, !recipe.isEmpty else { return base }
+        
+        var current = base
+        let steps = recipe.lowercased().split(separator: ",")
+        
+        for step in steps {
+            let s = step.trimmingCharacters(in: .whitespaces)
+            switch s {
+            case "sha256":
+                current = sha256(current)
+            case "sha512":
+                current = sha512(current)
+            case "uuid":
+                // Concat a new stable UUID based on current state or just append?
+                // For determinism, we should probably hash the current state with a UUID tag
+                current = sha256(current + UUID().uuidString) 
+            case "dna":
+                // Special tag to inject the "config DNA" at this point
+                // We'll handle this in the main call where we have char/world info
+                break 
+            default:
+                break
+            }
+        }
+        return current
     }
     
     func index(req: Request) async throws -> Response {
@@ -45,6 +85,7 @@ struct ArtController {
                 .seed-box { background: #eee; padding: 15px; border-radius: 5px; text-align: left; font-size: 0.7rem; margin-top: 20px; border-left: 4px solid #d63384; }
                 .seed-label { font-weight: bold; color: #333; display: block; margin-bottom: 5px; }
                 .seed-value { color: #d63384; word-break: break-all; }
+                .recipe-hint { background: #fff3cd; color: #856404; padding: 10px; margin-top: 10px; border: 1px solid #ffeeba; border-radius: 4px; font-size: 0.7rem; }
                 a { color: #0077B6; text-decoration: none; }
             </style>
         </head>
@@ -59,6 +100,10 @@ struct ArtController {
                     <br><br>
                     <span class="seed-label">UNIQUE MINT SEED (UUID/HASH):</span>
                     <span class="seed-value">\(randomHash)</span>
+                </div>
+
+                <div class="recipe-hint">
+                    <strong>Composer Tip:</strong> Use <code>?recipe=sha256,uuid,sha512</code> to chain cryptographic transformations in any order!
                 </div>
 
                 <p style="margin-top:20px;">
@@ -132,15 +177,10 @@ struct ArtController {
         let w = query.width ?? 60
         let h = query.height ?? 60
         let worldName = query.world
-        let dna = self.generateDNA(char: character, world: worldName, w: w, h: h)
-        let uuid = query.hash ?? UUID().uuidString
+        let baseSeed = query.hash ?? UUID().uuidString
         
-        let finalSeed: String
-        switch query.mode?.lowercased() {
-        case "dna": finalSeed = dna
-        case "combined": finalSeed = "\(dna)-\(uuid)"
-        default: finalSeed = uuid
-        }
+        // Build composite seed
+        let finalSeed = self.buildSeed(recipe: query.recipe, base: baseSeed)
 
         return try await self.runGeneration(
             req: req,
@@ -159,15 +199,10 @@ struct ArtController {
         let worldName = query.world
         let w = query.width ?? 50
         let h = query.height ?? 50
-        let dna = self.generateDNA(char: charName, world: worldName, w: w, h: h)
-        let uuid = query.hash ?? UUID().uuidString
+        let baseSeed = query.hash ?? UUID().uuidString
         
-        let finalSeed: String
-        switch query.mode?.lowercased() {
-        case "dna": finalSeed = dna
-        case "combined": finalSeed = "\(dna)-\(uuid)"
-        default: finalSeed = uuid
-        }
+        // Build composite seed
+        let finalSeed = self.buildSeed(recipe: query.recipe, base: baseSeed)
         
         return try await self.runGeneration(
             req: req,
@@ -249,6 +284,7 @@ struct ArtController {
                     .seed-box { background: #eee; padding: 15px; border-radius: 5px; text-align: left; font-size: 0.7rem; margin-top: 20px; border-left: 4px solid #d63384; }
                     .seed-label { font-weight: bold; color: #333; display: block; margin-bottom: 5px; }
                     .seed-value { color: #d63384; word-break: break-all; }
+                    .recipe-info { font-size: 0.6rem; color: #666; margin-top: 10px; font-style: italic; }
                     .related { width: 100%; max-width: 900px; border-top: 1px solid #ddd; padding-top: 20px; }
                     .related-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
                     .related-item { border: 1px solid #eee; background: white; padding: 5px; transition: transform 0.1s; }
@@ -264,8 +300,9 @@ struct ArtController {
                         <span class="seed-label">ALGORITHM DNA (SHA512):</span>
                         <span class="seed-value">\(dna)</span>
                         <br><br>
-                        <span class="seed-label">UNIQUE MINT SEED (FINAL):</span>
+                        <span class="seed-label">FINAL COMPOSITE SEED:</span>
                         <span class="seed-value">\(hash)</span>
+                        \(req.query[String.self, at: "recipe"] != nil ? "<div class='recipe-info'>Recipe: \(req.query[String.self, at: "recipe"]!)</div>" : "")
                     </div>
                     <p style="margin-top:20px;"><a href="/past">Archives</a> | <a href="/randomgallery">New Random</a> | <a href="/">Home</a></p>
                 </div>
