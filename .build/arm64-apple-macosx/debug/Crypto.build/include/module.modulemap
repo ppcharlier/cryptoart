@@ -1,0 +1,3 @@
+module Crypto {
+    header "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/Crypto.build/include/Crypto-Swift.h"
+}

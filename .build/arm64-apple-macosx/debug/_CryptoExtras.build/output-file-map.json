@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/_CryptoExtras.build/master.swiftdeps"
+  },
+  "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/checkouts/swift-crypto/Sources/_CryptoExtras/Exports.swift": {
+    "dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.d",
+    "object": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.swift.o",
+    "swiftmodule": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports~partial.swiftmodule",
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.swiftdeps",
+    "diagnostics": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/_CryptoExtras.build/Exports.dia"
+  }
+}

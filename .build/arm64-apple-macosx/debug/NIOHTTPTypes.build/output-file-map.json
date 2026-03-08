@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/NIOHTTPTypes.build/master.swiftdeps"
+  },
+  "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/checkouts/swift-nio-extras/Sources/NIOHTTPTypes/NIOHTTPTypes.swift": {
+    "dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/NIOHTTPTypes.build/NIOHTTPTypes.d",
+    "object": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/NIOHTTPTypes.build/NIOHTTPTypes.swift.o",
+    "swiftmodule": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/NIOHTTPTypes.build/NIOHTTPTypes~partial.swiftmodule",
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/NIOHTTPTypes.build/NIOHTTPTypes.swiftdeps",
+    "diagnostics": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/NIOHTTPTypes.build/NIOHTTPTypes.dia"
+  }
+}

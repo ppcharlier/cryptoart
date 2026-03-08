@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/MetricsTestKit.build/master.swiftdeps"
+  },
+  "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/checkouts/swift-metrics/Sources/MetricsTestKit/TestMetrics.swift": {
+    "dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/MetricsTestKit.build/TestMetrics.d",
+    "object": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/MetricsTestKit.build/TestMetrics.swift.o",
+    "swiftmodule": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/MetricsTestKit.build/TestMetrics~partial.swiftmodule",
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/MetricsTestKit.build/TestMetrics.swiftdeps",
+    "diagnostics": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/MetricsTestKit.build/TestMetrics.dia"
+  }
+}

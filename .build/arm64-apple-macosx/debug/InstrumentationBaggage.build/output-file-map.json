@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/InstrumentationBaggage.build/master.swiftdeps"
+  },
+  "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/checkouts/swift-service-context/Sources/InstrumentationBaggage/CompatibilityShims.swift": {
+    "dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/InstrumentationBaggage.build/CompatibilityShims.d",
+    "object": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/InstrumentationBaggage.build/CompatibilityShims.swift.o",
+    "swiftmodule": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/InstrumentationBaggage.build/CompatibilityShims~partial.swiftmodule",
+    "swift-dependencies": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/InstrumentationBaggage.build/CompatibilityShims.swiftdeps",
+    "diagnostics": "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/InstrumentationBaggage.build/CompatibilityShims.dia"
+  }
+}

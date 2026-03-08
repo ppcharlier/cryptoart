@@ -1,0 +1,4 @@
+module CNIOLLHTTP {
+    umbrella header "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/checkouts/swift-nio/Sources/CNIOLLHTTP/include/CNIOLLHTTP.h"
+    export *
+}
