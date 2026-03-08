@@ -46,13 +46,7 @@ struct ArtController {
             case "sha512":
                 current = sha512(current)
             case "uuid":
-                // Concat a new stable UUID based on current state or just append?
-                // For determinism, we should probably hash the current state with a UUID tag
                 current = sha256(current + UUID().uuidString) 
-            case "dna":
-                // Special tag to inject the "config DNA" at this point
-                // We'll handle this in the main call where we have char/world info
-                break 
             default:
                 break
             }
@@ -174,12 +168,18 @@ struct ArtController {
         let character = req.parameters.get("character") ?? ""
         let query = try req.query.decode(ArtQuery.self)
         
-        let w = query.width ?? 60
-        let h = query.height ?? 60
+        var w = query.width ?? 60
+        var h = query.height ?? 60
+        
+        // Dynamic sizing for Parcival
+        if character.lowercased() == "parcival", let recipe = query.recipe {
+            let keyCount = recipe.split(separator: ",").count
+            w = max(60, keyCount * 30)
+            h = max(60, keyCount * 30)
+        }
+
         let worldName = query.world
         let baseSeed = query.hash ?? UUID().uuidString
-        
-        // Build composite seed
         let finalSeed = self.buildSeed(recipe: query.recipe, base: baseSeed)
 
         return try await self.runGeneration(
@@ -197,11 +197,18 @@ struct ArtController {
         let query = try req.query.decode(ArtQuery.self)
         let charName = query.char ?? "all"
         let worldName = query.world
-        let w = query.width ?? 50
-        let h = query.height ?? 50
-        let baseSeed = query.hash ?? UUID().uuidString
         
-        // Build composite seed
+        var w = query.width ?? 50
+        var h = query.height ?? 50
+        
+        // Dynamic sizing for Parcival
+        if charName.lowercased() == "parcival", let recipe = query.recipe {
+            let keyCount = recipe.split(separator: ",").count
+            w = max(50, keyCount * 30)
+            h = max(50, keyCount * 30)
+        }
+
+        let baseSeed = query.hash ?? UUID().uuidString
         let finalSeed = self.buildSeed(recipe: query.recipe, base: baseSeed)
         
         return try await self.runGeneration(
