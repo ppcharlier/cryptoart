@@ -294,7 +294,14 @@ struct ArtController {
         } else if let algo = CharacterRegistry.get(name: charName) {
             algo.apply(to: grid, using: &rng)
         } else { throw Abort(.notFound) }
-        let renderer: Renderer = (format == "ascii") ? ASCIIRenderer() : (format == "json" ? JSONRenderer() : SVGRenderer())
+        let renderer: Renderer
+        if format == "ascii" {
+            renderer = ASCIIRenderer()
+        } else if format == "json" {
+            renderer = JSONRenderer()
+        } else {
+            renderer = SVGRenderer()
+        }
         let response = try renderer.render(grid)
         do {
             try StorageService.saveMetadata(seed: hash, character: charName, world: worldName)
