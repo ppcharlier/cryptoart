@@ -40,7 +40,8 @@ struct CharacterRegistry {
         Shrek(),
         Minion(),
         Homer(),
-        HarryPotter()
+        HarryPotter(),
+        Parcival()
     ]
     
     static func get(name: String) -> CharacterAlgorithm? {
