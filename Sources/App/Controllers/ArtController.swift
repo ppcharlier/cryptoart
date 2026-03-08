@@ -9,7 +9,7 @@ struct ArtQuery: Content {
     var width: Int?
     var height: Int?
     var recipe: String? 
-    var scale: Int? // 1, 2, 4, 8 (multiples)
+    var scale: Int? 
 }
 
 struct ArtController {
@@ -39,7 +39,7 @@ struct ArtController {
             case "sha256": current = sha256(current)
             case "sha512": current = sha512(current)
             case "uuid": current = sha256(current + UUID().uuidString) 
-            default: current = sha256(current + s) // Use raw words as entropy too
+            default: current = sha256(current + s) 
             }
         }
         return current
@@ -65,8 +65,8 @@ struct ArtController {
             <div id="recipe-display" class="recipe-display"></div>
             
             <div class="scale-selector">
-                <label>Universe Scale (Power of 2):</label>
-                <select id="scale-input" onchange="renderRecipe()">
+                <label>Universe Scale:</label>
+                <select id="scale-input">
                     <option value="64">64x64 (Classic)</option>
                     <option value="128">128x128 (Expanded)</option>
                     <option value="256">256x256 (Galactic)</option>
@@ -80,20 +80,6 @@ struct ArtController {
         <script>
             let currentRecipe = "\(recipe)".split(',').filter(s => s.length > 0);
             
-            function parsePhrase() {
-                const input = document.getElementById('phrase-input').value;
-                if (!input) return;
-                const words = input.trim().split(/\\s+/);
-                // We clear and replace with words for "cleaner" experience or just append?
-                // Let's append new unique words to the recipe
-                words.forEach(w => {
-                    if (w.length > 2 && !currentRecipe.includes(w)) {
-                        currentRecipe.push(w);
-                    }
-                });
-                renderRecipe();
-            }
-
             function renderRecipe() {
                 const display = document.getElementById('recipe-display');
                 display.innerHTML = '';
@@ -103,6 +89,18 @@ struct ArtController {
                     chip.innerHTML = ing.toUpperCase() + ' <span onclick="removeIngredient(' + index + ')">&times;</span>';
                     display.appendChild(chip);
                 });
+            }
+
+            function parsePhrase() {
+                const input = document.getElementById('phrase-input').value;
+                if (!input) return;
+                const words = input.trim().split(/\\s+/);
+                words.forEach(w => {
+                    if (w.length > 2 && !currentRecipe.includes(w)) {
+                        currentRecipe.push(w);
+                    }
+                });
+                renderRecipe();
             }
 
             function addIngredient(type) {
@@ -184,7 +182,6 @@ struct ArtController {
             let url = "/art?hash=\(seed)&char=\(char)"
             return "<div class='item'><a href='\(url)'><img src='\(url)&raw=true' width='150' /><div class='label'>\(char)</div></a></div>"
         }.joined()
-        
         let html = """
         <!DOCTYPE html><html><head><title>Archives</title><style>\(commonStyles) .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; width: 100%; } .item { background: #222; padding: 10px; text-align: center; } .label { font-size: 0.7rem; margin-top: 5px; }</style></head>
         <body><div class="nav"><a href="/">← HOME</a></div><h1>THE ARCHIVES</h1><div class="grid">\(list)</div></body></html>
@@ -192,11 +189,30 @@ struct ArtController {
         return Response(status: .ok, headers: ["Content-Type": "text/html"], body: .init(string: html))
     }
 
+    func pistory(req: Request) async throws -> Response {
+        let items = StorageService.listAllMetadata().filter { $0["character"]?.lowercased() == "ppp" }
+        let list = items.map { meta in
+            let seed = meta["seed"] ?? ""
+            let url = "/art?hash=\(seed)&char=ppp"
+            return "<div class='item'><a href='\(url)'><img src='\(url)&raw=true' width='200' /><div class='label'>PPP</div></a></div>"
+        }.joined()
+        let html = """
+        <!DOCTYPE html><html><head><title>PPP Pistory</title><style>\(commonStyles) .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; width: 100%; } .item { background: #222; padding: 10px; text-align: center; }</style></head>
+        <body><div class="nav"><a href="/">← HOME</a></div><h1>THE PISTORY</h1><div class="grid">\(list)</div></body></html>
+        """
+        return Response(status: .ok, headers: ["Content-Type": "text/html"], body: .init(string: html))
+    }
+
     func generateHierarchicalArt(req: Request) async throws -> Response {
         let character = req.parameters.get("character") ?? ""
         let query = try req.query.decode(ArtQuery.self)
-        let w = query.width ?? 64
-        let h = query.height ?? 64
+        var w = query.width ?? 64
+        var h = query.height ?? 64
+        if character.lowercased() == "parcival", let recipe = query.recipe {
+            let keyCount = recipe.split(separator: ",").count
+            w = max(64, keyCount * 32); h = max(64, keyCount * 32)
+        }
+        if character.lowercased() == "ppp" { w = 128; h = 64 }
         let finalSeed = self.buildSeed(recipe: query.recipe, base: query.hash ?? UUID().uuidString)
         return try await self.runGeneration(req: req, hash: finalSeed, charName: character, worldName: query.world, format: query.format?.lowercased() ?? "svg", w: w, h: h)
     }
@@ -204,14 +220,20 @@ struct ArtController {
     func generateArt(req: Request) async throws -> Response {
         let query = try req.query.decode(ArtQuery.self)
         let charName = query.char ?? "all"
-        let w = query.width ?? 64
-        let h = query.height ?? 64
+        var w = query.width ?? 64
+        var h = query.height ?? 64
+        if charName.lowercased() == "parcival", let recipe = query.recipe {
+            let keyCount = recipe.split(separator: ",").count
+            w = max(64, keyCount * 32); h = max(64, keyCount * 32)
+        }
+        if charName.lowercased() == "ppp" { w = 128; h = 64 }
         let finalSeed = self.buildSeed(recipe: query.recipe, base: query.hash ?? UUID().uuidString)
         return try await self.runGeneration(req: req, hash: finalSeed, charName: charName, worldName: query.world, format: query.format?.lowercased() ?? "svg", w: w, h: h)
     }
     
     private func runGeneration(req: Request, hash: String, charName: String, worldName: String? = nil, format: String, w: Int, h: Int) async throws -> Response {
-        let grid = Grid(width: w, height: h)
+        let maxGridSize = 512
+        let grid = Grid(width: min(w, maxGridSize), height: min(h, maxGridSize))
         grid.backgroundTheme = "#000000" 
         var rng = SeededGenerator(hashString: hash)
         
@@ -223,7 +245,6 @@ struct ArtController {
             algo.apply(to: grid, using: &rng)
         } else { throw Abort(.notFound) }
         
-        // Save
         do {
             try StorageService.saveMetadata(seed: hash, character: charName, world: worldName)
             let svgData = try SVGRenderer().render(grid).body.buffer!
@@ -231,7 +252,8 @@ struct ArtController {
         } catch { print(error) }
 
         if req.query[String.self, at: "raw"] != nil {
-            return try (format == "ascii" ? ASCIIRenderer().render(grid) : SVGRenderer().render(grid))
+            if format == "ascii" { return try ASCIIRenderer().render(grid) }
+            else { return try SVGRenderer().render(grid) }
         }
 
         let svgString = String(buffer: try SVGRenderer().render(grid).body.buffer!)
@@ -239,34 +261,14 @@ struct ArtController {
         let dna = self.generateDNA(char: charName, world: worldName, w: w, h: h)
 
         let html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Pilou CryptoArt - Expansion</title>
-            <style>\(commonStyles)</style>
-        </head>
-        <body>
-            <div class="canvas-container">
-                <div class="canvas">\(svgString)</div>
-                <div class="ascii-art">\(asciiString)</div>
-            </div>
-            
-            <div class="info">
-                <h2>\(charName) (\(worldName ?? "Original"))</h2>
-                <div class="seed-box">
-                    <span class="seed-label">ALGORITHM DNA (SHA512):</span>
-                    <span class="seed-value">\(dna)</span>
-                    <br><br>
-                    <span class="seed-label">FINAL COMPOSITE SEED:</span>
-                    <span class="seed-value">\(hash)</span>
-                </div>
-                \(composerHTML(currentRecipe: req.query["recipe"], charName: charName))
-                <p style="margin-top:20px;">
-                    <a href="/world/galleries">Galleries</a> | <a href="/past">Archives</a> | <a href="/randomgallery">New Random</a>
-                </p>
-            </div>
-        </body>
-        </html>
+        <!DOCTYPE html><html><head><title>Pilou CryptoArt</title><style>\(commonStyles)</style></head>
+        <body><div class="canvas-container"><div class="canvas">\(svgString)</div><div class="ascii-art">\(asciiString)</div></div>
+        <div class="info"><h2>\(charName) (\(worldName ?? "Original"))</h2>
+        <div class="seed-box"><span class="seed-label">ALGORITHM DNA:</span><span class="seed-value">\(dna)</span><br><br>
+        <span class="seed-label">FINAL COMPOSITE SEED:</span><span class="seed-value">\(hash)</span></div>
+        \(composerHTML(currentRecipe: req.query["recipe"], charName: charName))
+        <p style="margin-top:20px;"><a href="/world/galleries">Galleries</a> | <a href="/past">Archives</a> | <a href="/pistory">Pistory</a></p>
+        </div></body></html>
         """
         return Response(status: .ok, headers: ["Content-Type": "text/html"], body: .init(string: html))
     }
