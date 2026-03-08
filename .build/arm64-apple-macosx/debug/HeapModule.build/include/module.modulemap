@@ -1,3 +1,0 @@
-module HeapModule {
-    header "/Users/pierrephilippe/Developer/Fly.io/pilou_random_cryptoart/.build/arm64-apple-macosx/debug/HeapModule.build/include/HeapModule-Swift.h"
-}
