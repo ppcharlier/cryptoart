@@ -158,7 +158,8 @@ struct ArtController {
                 <p style="margin-top:20px;">
                     <a href="/world/galleries">Galleries</a> | 
                     <a href="/randomgallery">New Random</a> | 
-                    <a href="/past">Archives</a>
+                    <a href="/past">Archives</a> |
+                    <a href="/pistory">PPP Pistory</a>
                 </p>
             </div>
         </body>
@@ -211,6 +212,47 @@ struct ArtController {
         return Response(status: .ok, headers: ["Content-Type": "text/html"], body: .init(string: html))
     }
 
+    func pistory(req: Request) async throws -> Response {
+        let items = StorageService.listAllMetadata().filter { $0["character"]?.lowercased() == "ppp" }
+        let list = items.map { meta in
+            let seed = meta["seed"] ?? ""
+            let url = "/art?hash=\(seed)&char=ppp"
+            return """
+            <div class="item">
+                <a href="\(url)">
+                    <img src="\(url)&raw=true" width="200" height="120" />
+                    <div class="seed-label">PPP Principal</div>
+                    <div class="seed-hash">\(seed.prefix(8))...</div>
+                </a>
+            </div>
+            """
+        }.joined()
+        
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Pilou CryptoArt - Pistory</title>
+            <style>
+                \(commonStyles)
+                .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; width: 100%; }
+                .item { border: 1px solid #ddd; background: white; padding: 10px; transition: transform 0.2s; }
+                .item:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+                .seed-label { font-size: 0.8rem; font-weight: bold; color: #333; margin-top: 10px; text-align: center; }
+                .seed-hash { font-size: 0.6rem; color: #999; text-align: center; }
+                img { width: 100%; height: auto; display: block; background: #fafafa; }
+            </style>
+        </head>
+        <body>
+            <div class="nav"><a href="/">← Back Home</a></div>
+            <h1>The Pistory of PPP</h1>
+            <div class="grid">\(list.isEmpty ? "<p>No PPP art archived yet.</p>" : list)</div>
+        </body>
+        </html>
+        """
+        return Response(status: .ok, headers: ["Content-Type": "text/html"], body: .init(string: html))
+    }
+
     func generateHierarchicalArt(req: Request) async throws -> Response {
         let character = req.parameters.get("character") ?? ""
         let query = try req.query.decode(ArtQuery.self)
@@ -220,6 +262,7 @@ struct ArtController {
             let keyCount = recipe.split(separator: ",").count
             w = max(60, keyCount * 30); h = max(60, keyCount * 30)
         }
+        if character.lowercased() == "ppp" { w = 100; h = 60 }
         let finalSeed = self.buildSeed(recipe: query.recipe, base: query.hash ?? UUID().uuidString)
         return try await self.runGeneration(req: req, hash: finalSeed, charName: character, worldName: query.world, format: query.format?.lowercased() ?? "svg", w: w, h: h)
     }
@@ -233,6 +276,7 @@ struct ArtController {
             let keyCount = recipe.split(separator: ",").count
             w = max(50, keyCount * 30); h = max(50, keyCount * 30)
         }
+        if charName.lowercased() == "ppp" { w = 100; h = 60 }
         let finalSeed = self.buildSeed(recipe: query.recipe, base: query.hash ?? UUID().uuidString)
         return try await self.runGeneration(req: req, hash: finalSeed, charName: charName, worldName: query.world, format: query.format?.lowercased() ?? "svg", w: w, h: h)
     }
@@ -240,11 +284,8 @@ struct ArtController {
     private func runGeneration(req: Request, hash: String, charName: String, worldName: String? = nil, format: String, w: Int, h: Int) async throws -> Response {
         let maxGridSize = 500
         guard w <= maxGridSize, h <= maxGridSize, w > 0, h > 0 else { throw Abort(.badRequest) }
-        
-        let grid = Grid(width: w, height: h)
-        grid.backgroundTheme = "#FDFCF0" 
+        let grid = Grid(width: w, height: h); grid.backgroundTheme = "#FDFCF0" 
         var rng = SeededGenerator(hashString: hash)
-        
         if let world = worldName {
             let worldChars = CharacterRegistry.getBySeries(world)
             for algo in worldChars { algo.apply(to: grid, using: &rng) }
@@ -253,22 +294,11 @@ struct ArtController {
         } else if let algo = CharacterRegistry.get(name: charName) {
             algo.apply(to: grid, using: &rng)
         } else { throw Abort(.notFound) }
-        
-        let renderer: Renderer
-        if format == "ascii" {
-            renderer = ASCIIRenderer()
-        } else if format == "json" {
-            renderer = JSONRenderer()
-        } else {
-            renderer = SVGRenderer()
-        }
+        let renderer: Renderer = (format == "ascii") ? ASCIIRenderer() : (format == "json" ? JSONRenderer() : SVGRenderer())
         let response = try renderer.render(grid)
-        
         do {
             try StorageService.saveMetadata(seed: hash, character: charName, world: worldName)
-            if let bodyBuffer = response.body.buffer {
-                try StorageService.save(data: Data(buffer: bodyBuffer), filename: hash, format: format)
-            }
+            if let bodyBuffer = response.body.buffer { try StorageService.save(data: Data(buffer: bodyBuffer), filename: hash, format: format) }
         } catch { print("Persistence error: \(error)") }
 
         if format == "svg" && req.query[String.self, at: "raw"] == nil {
@@ -278,7 +308,6 @@ struct ArtController {
                 "<div class='related-item'><a href='/art?hash=\(seed)&char=\(charName)'><img src='/art?hash=\(seed)&char=\(charName)&raw=true' width='100' height='100' /></a></div>"
             }.joined()
             let dna = self.generateDNA(char: charName, world: worldName, w: w, h: h)
-
             let html = """
             <!DOCTYPE html>
             <html>
@@ -298,7 +327,7 @@ struct ArtController {
                         <span class="seed-value">\(hash)</span>
                     </div>
                     \(composerHTML(currentRecipe: req.query["recipe"], charName: charName))
-                    <p style="margin-top:20px;"><a href="/past">Archives</a> | <a href="/randomgallery">New Random</a> | <a href="/">Home</a></p>
+                    <p style="margin-top:20px;"><a href="/past">Archives</a> | <a href="/pistory">PPP Pistory</a> | <a href="/randomgallery">New Random</a> | <a href="/">Home</a></p>
                 </div>
                 \(relatedGallery.isEmpty ? "" : "<div class='related'><h3>History for \(charName):</h3><div class='related-grid'>\(relatedGallery)</div></div>")
             </body>

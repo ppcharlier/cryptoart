@@ -7,6 +7,7 @@ func routes(_ app: Application) throws {
     app.get(use: artController.index)
     app.get("art", use: artController.generateArt)
     app.get("past", use: artController.pastArt)
+    app.get("pistory", use: artController.pistory)
     
     // Hierarchical Route (Modern Fiction)
     app.get("europe", "belgium", ":series", ":character", use: artController.generateHierarchicalArt)
